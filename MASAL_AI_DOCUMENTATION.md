@@ -1,0 +1,558 @@
+# Masal AI — Complete Technical Documentation
+
+---
+
+## 1. Project Overview
+Masal AI is an AI-powered B2B real-estate lead prioritization and sales-assistant platform. It is engineered specifically for real-estate sales representatives and brokers who manage inbound property inquiries across multiple acquisition channels (portals, website forms, WhatsApp messages). The application accelerates the sales cycle by automatically extracting structured buyer intelligence, transparently scoring lead priority, offering lead-grounded conversational coaching, and generating customized multi-channel follow-up communications.
+
+---
+
+## 2. Problem Statement
+Real estate sales teams face three primary operational bottlenecks:
+1. **Unstructured & Fragmented Inquiries**: Messages arrive in varying formats without standardized data, forcing sales reps to manually decipher customer needs.
+2. **Prioritization Paralysis**: Sales reps often waste time chasing lukewarm window-shoppers while high-urgency, ready-to-buy customers go cold due to delayed response times.
+3. **Inconsistent & Generic Outreach**: Drafting tailored WhatsApp messages, formal emails, or phone scripts for dozens of leads is time-consuming, resulting in generic templates that fail to convert.
+
+Masal AI eliminates these inefficiencies by combining deterministic multi-signal prioritization with generative AI intelligence grounded strictly in the lead's profile.
+
+---
+
+## 3. Product Features
+* **Structured Lead Intake**: Form with validation capturing Name, Locality, Property Requirement, Budget, Purchase Timeline, and raw Inbound Customer Message.
+* **Autonomous AI Lead Analysis**: Extracts Executive Summary, Buying Intent, Key Requirements, Buyer Objections & Concerns, Recommended Next Tactical Action, and Suggested First Response.
+* **Transparent Multi-Factor Prioritization (`HOT`, `WARM`, `COLD`)**: Rule-based explainable scoring using timeline urgency, budget specificity, and engagement signals.
+* **Lead-Specific Conversational Co-Pilot**: Interactive chat interface enabling the salesperson to ask tactical questions ("What should I emphasize on the call?", "Make my reply more assertive") strictly grounded in the selected customer's profile.
+* **AI Follow-up Studio**: Dynamic communication generator across **WhatsApp**, **Email**, and **Call Scripts** with customizable tones (**Professional**, **Friendly**, **Assertive**, **Urgent**) and 1-click clipboard copying.
+* **Unified Sales Dashboard**: Pipeline summary cards, instant search, priority filtering, and disk persistence.
+
+---
+
+## 4. Complete Architecture
+
+```
+                                USER / SALESPERSON
+                                       │
+                                       ▼
+                       ┌───────────────────────────────┐
+                       │     React + Vite Frontend     │
+                       │   (Port 5173 - Client SPA)    │
+                       └───────────────┬───────────────┘
+                                       │ HTTP / REST (JSON)
+                                       │ (Vite Proxy: /api -> :8000)
+                                       ▼
+                       ┌───────────────────────────────┐
+                       │        FastAPI Backend        │
+                       │   (Uvicorn ASGI - Port 8000)  │
+                       ├───────────────────────────────┤
+                       │  • Routers (/api/leads)       │
+                       │  • Pydantic Input/Output Vld  │
+                       │  • CORS & Lifespan Hooks      │
+                       └───────────────┬───────────────┘
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    ▼                                     ▼
+      ┌───────────────────────────┐         ┌───────────────────────────┐
+      │      SQLite Database      │         │     Google Gemini API     │
+      │   (SQLAlchemy 2.0 ORM)    │         │  (google-genai SDK 2.25)  │
+      │   File: backend/leads.db  │         │   Model: gemini-2.5-flash │
+      └───────────────────────────┘         └───────────────────────────┘
+```
+
+---
+
+## 5. Technology Stack
+
+* **Frontend**: React 18, Vite 6, JavaScript (JSX), CSS3, Lucide React (Icons).
+* **Backend**: Python 3.12, FastAPI 0.115+, Uvicorn 0.54 (ASGI Server).
+* **Database & ORM**: SQLite 3, SQLAlchemy 2.1 ORM.
+* **Data Contracts & Validation**: Pydantic 2.13, Pydantic Settings 2.15.
+* **Artificial Intelligence**: Google Gemini API via official `google-genai` SDK.
+* **Testing & Quality Assurance**: pytest 9.1, FastAPI TestClient, in-memory SQLite isolation.
+
+---
+
+## 6. Project Structure
+
+```
+masalAI_assignment/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── config.py             # Centralized Pydantic BaseSettings
+│   │   ├── database.py           # SQLite engine, SessionLocal, get_db
+│   │   ├── models.py             # Lead SQLAlchemy database model
+│   │   ├── schemas.py            # Pydantic validation schemas
+│   │   ├── main.py               # FastAPI app, lifespan, CORS, health
+│   │   ├── routers/
+│   │   │   └── leads.py          # CRUD, Analysis, Chat, Follow-up routes
+│   │   └── services/
+│   │       ├── lead_service.py   # Database query and CRUD logic
+│   │       ├── priority_service.py # Explainable scoring algorithm
+│   │       └── ai_service.py     # Gemini SDK client & prompts
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py           # In-memory DB fixture & TestClient
+│   │   ├── test_health.py        # Health endpoint test
+│   │   └── test_leads_api.py     # 11 tests covering CRUD, AI, Chat, Scoring
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Header.jsx
+│   │   │   ├── PriorityBadge.jsx
+│   │   │   ├── SummaryCards.jsx
+│   │   │   ├── LeadCard.jsx
+│   │   │   └── EmptyState.jsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── AddLead.jsx
+│   │   │   ├── LeadDetails.jsx
+│   │   │   ├── LeadChat.jsx
+│   │   │   └── FollowUpGenerator.jsx
+│   │   ├── services/
+│   │   │   └── api.js            # Normalized REST client
+│   │   ├── data/
+│   │   │   └── mockLeads.js      # Seed fallback data
+│   │   ├── App.jsx               # Application root & view controller
+│   │   ├── App.css               # B2B SaaS styles
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+├── Procfile
+├── .gitignore
+├── README.md
+└── MASAL_AI_DOCUMENTATION.md
+```
+
+---
+
+# Phase 1 — Project Architecture & Setup
+
+## Objective
+Establish the foundational developer environment, version control rules, backend skeleton, and frontend build tooling with zero technical debt or hardcoded secrets.
+
+## What Was Implemented
+* Initialized Git repository with comprehensive `.gitignore` rules.
+* Created a dedicated Python virtual environment in `backend/venv/` with Python 3.12.
+* Installed core backend dependencies: `fastapi`, `uvicorn`, `pydantic`, `pydantic-settings`, `google-genai`, `sqlalchemy`, `pytest`, `httpx`.
+* Established centralized configuration via `pydantic-settings` (`backend/app/config.py`).
+* Created `backend/app/main.py` with CORS middleware and `GET /api/health`.
+* Initialized React + Vite frontend with `lucide-react` icons.
+
+## Files Created/Modified
+* `.gitignore`, `backend/requirements.txt`, `backend/.env.example`, `backend/.env`
+* `backend/app/__init__.py`, `backend/app/config.py`, `backend/app/main.py`
+* `backend/tests/__init__.py`, `backend/tests/test_health.py`
+* `frontend/package.json`, `frontend/vite.config.js`, `frontend/src/App.jsx`, `frontend/src/main.jsx`
+
+## How It Works
+Uvicorn runs the FastAPI application on port 8000. FastAPI configures CORS to accept incoming requests from `http://localhost:5173`. Vite serves the React development application on port 5173 and proxies `/api` requests to port 8000.
+
+## Technical Decisions
+* **Virtual Environment Location**: Placed in `backend/venv/` to isolate Python dependencies without polluting the root repository.
+* **Pydantic Settings**: Used `BaseSettings` with multi-path `.env` resolution (`.env`, `backend/.env`) to avoid fragile `os.getenv` strings.
+
+## Testing & Verification
+* Backend health check test passed: `pytest backend/tests/test_health.py` (1 passed in 0.38s).
+* Frontend build verified: `npm run build --prefix frontend` (succeeded in 354ms).
+* Git ignore verified: `git check-ignore -v backend/.env backend/venv/` confirmed ignored.
+
+---
+
+# Phase 2 — Frontend UI Structure (Mock Data)
+
+## Objective
+Construct the complete salesperson-facing interface across 5 distinct screens using reusable components, clean responsive layouts, and realistic Indian real estate mock data.
+
+## What Was Implemented
+* **Dashboard**: 4 Metric summary cards, real-time search, priority tab filtering, and lead cards grid.
+* **Add Lead Form**: Clean input controls with client-side required field validation.
+* **Lead Details**: Overview fact cards and a 6-part AI intelligence grid with 1-click clipboard copy.
+* **Lead Chat UI**: Context banner showing lead requirement, quick prompt chips, message bubbles, and natural typing delay.
+* **AI Follow-up Studio**: Channel selector (WhatsApp, Email, Call Script), tone selector (Professional, Friendly, Assertive, Urgent), formatted preview, and copy feedback.
+
+## Files Created/Modified
+* `frontend/src/data/mockLeads.js`
+* `frontend/src/components/Header.jsx`, `PriorityBadge.jsx`, `SummaryCards.jsx`, `LeadCard.jsx`, `EmptyState.jsx`
+* `frontend/src/pages/Dashboard.jsx`, `AddLead.jsx`, `LeadDetails.jsx`, `LeadChat.jsx`, `FollowUpGenerator.jsx`
+* `frontend/src/App.jsx`, `frontend/src/App.css`
+
+## Testing & Verification
+* `npm run build --prefix frontend` passed cleanly in 1.04s transforming 1584 modules.
+
+---
+
+# Phase 3 & 4 — Backend API, SQLite Database & Lead CRUD
+
+## Objective
+Replace temporary client-side memory with persistent relational storage in SQLite using SQLAlchemy ORM, and expose standard RESTful endpoints with Pydantic request/response validation.
+
+## What Was Implemented
+* Database configuration (`backend/app/database.py`) with thread-safe SQLite engine and request-scoped `get_db` session dependency.
+* `Lead` SQLAlchemy model (`backend/app/models.py`) storing all required lead fields, priority, priority reason, and JSON-encoded AI analysis.
+* Pydantic schemas (`backend/app/schemas.py`) enforcing types and field constraints.
+* Lead service layer (`backend/app/services/lead_service.py`) with CRUD operations and idempotent database seeding on startup.
+* Leads router (`backend/app/routers/leads.py`):
+  * `GET /api/leads` (list with search and priority query filters)
+  * `POST /api/leads` (status 201)
+  * `GET /api/leads/{id}` (single lead with 404 handling)
+  * `PUT /api/leads/{id}` (update with 404 handling)
+  * `DELETE /api/leads/{id}` (status 204 with 404 handling)
+
+## How It Works
+Incoming JSON is validated by Pydantic against `LeadCreate`. The service layer computes priority and saves the model to SQLite via SQLAlchemy. The committed record is converted into `LeadResponse` and serialized back to the client.
+
+## Technical Decisions
+* **JSON Column for AI Analysis**: Storing the 6 structured AI items inside a native SQLite JSON column preserves flexibility without requiring an over-engineered multi-table relational schema.
+* **Idempotent Seeding**: During FastAPI `lifespan` startup, `seed_default_leads_if_empty()` only seeds records if `db.query(Lead).count() == 0`, avoiding duplicate leads on every server restart.
+
+## Testing & Verification
+* Created isolated in-memory test database fixture in `backend/tests/conftest.py`.
+* Verified real persistence across server restarts using a multi-session script (`Created lead -> Disposed Engine -> Reloaded lead from disk`).
+
+---
+
+# Phase 5 & 6 — Real Gemini AI Integration & Structured Analysis
+
+## Objective
+Connect the backend to the Google Gemini API using the official `google-genai` SDK to produce structured, schema-validated lead intelligence grounded strictly in the customer's input.
+
+## What Was Implemented
+* AI Service (`backend/app/services/ai_service.py`) using `genai.Client(api_key=settings.gemini_api_key)`.
+* Structured output extraction using Pydantic `AIAnalysisSchema`:
+  1. `summary` (Executive summary)
+  2. `intent` (Purchase intention)
+  3. `key_requirements` (Verified list)
+  4. `objections` (Identified risks/concerns)
+  5. `recommended_next_action` (Immediate next step)
+  6. `suggested_response` (Ready-to-send reply)
+* Robust error handling and fallback: If the API key is not configured or an external network error occurs, the service gracefully switches to a high-quality contextual rule analyzer without crashing or corrupting lead state.
+
+## Technical Decisions
+* **Native Pydantic Response Schema**: Used `response_schema=AIAnalysisSchema` and `response_mime_type="application/json"` in `types.GenerateContentConfig` to instruct Gemini to produce strict JSON matching our Pydantic schema, eliminating fragile regex parsing.
+* **Zero Real AI Calls in Automated Tests**: All unit tests run against local mocks/fallbacks, preventing flaky network failures or quota exhaustion in CI/CD pipelines.
+
+---
+
+# Phase 7 — Explainable Priority Scoring
+
+## Objective
+Implement an explainable, multi-signal scoring model that categorizes leads into `HOT`, `WARM`, and `COLD` with human-readable rationale.
+
+## What Was Implemented
+* `backend/app/services/priority_service.py` evaluates 4 transparent dimensions:
+  1. **Timeline Urgency (0–40 pts)**: Ready to move / < 1 month (+40), 2–3 months (+25), 4–6 months (+15), > 6 months (+5).
+  2. **Budget Specificity (0–25 pts)**: Stated currency/range (+25), number only (+15), unconfirmed (+5).
+  3. **Requirement Definition (0–15 pts)**: Concrete unit type (+15), general (+8).
+  4. **Engagement Signals (0–20 pts)**: Action keywords like "visit this weekend" (+20) vs hesitation keywords like "just exploring" (0).
+* **Thresholds**: $\ge 70 \rightarrow \text{HOT}$, $40–69 \rightarrow \text{WARM}$, $< 40 \rightarrow \text{COLD}$.
+* Generates an explainable `priority_reason` stored in SQLite and displayed on lead cards.
+
+---
+
+# Phase 8 & 9 — Lead Chat & AI Follow-Up Generator Endpoints
+
+## Objective
+Provide endpoints for lead-specific conversational coaching and multi-channel follow-up drafting.
+
+## What Was Implemented
+* `POST /api/leads/{id}/chat`: Extracts lead context and passes it into Gemini with system instructions to act as a Real Estate Sales Coach.
+* `POST /api/leads/{id}/follow-up`: Generates tailored messages for **WhatsApp** (short, conversational), **Email** (subject + formal body), and **Call Script** (opening, discovery, closing) across **Professional**, **Friendly**, **Assertive**, and **Urgent** tones.
+
+---
+
+# Phase 10 & 11 — Frontend Integration & UI Polish
+
+## Objective
+Connect React to the FastAPI backend, replace mock persistence with real API requests, and provide enterprise-grade UX polish.
+
+## What Was Implemented
+* Created centralized API adapter in `frontend/src/services/api.js` with field normalization (`normalizeLead`).
+* Connected Dashboard to `GET /api/leads`.
+* Connected Add Lead form to `POST /api/leads`.
+* Connected Lead Details to `GET /api/leads/{id}`, `POST /api/leads/{id}/analyze`, and `DELETE /api/leads/{id}` (with confirmation banner).
+* Connected Chat to `POST /api/leads/{id}/chat`.
+* Connected Follow-up Studio to `POST /api/leads/{id}/follow-up`.
+* Added loading spinners, button disabling during requests, clipboard copy visual confirmation, and priority rationale badges.
+
+---
+
+# Phase 12 — Testing & Verification
+
+## Objective
+Verify all backend and frontend layers through automated test suites and production build checks.
+
+## Actual Test Execution Results
+```
+backend/tests/test_health.py .                                           [  8%]
+backend/tests/test_leads_api.py ...........                              [100%]
+======================== 12 passed, 1 warning in 0.10s =========================
+```
+* **Frontend Build**: `npm run build --prefix frontend` succeeded in 1.04s generating `dist/assets/index-roYP1KCr.js` (204.89 kB).
+
+---
+
+# Phase 13 — Security Review
+
+## Security Controls Verified
+1. **Server-Side API Key Storage**: Gemini key is stored only in `backend/.env`. Verified zero occurrences of API keys in frontend assets.
+2. **Git Hygiene**: `.gitignore` strictly ignores `.env`, `venv/`, `node_modules/`, `dist/`, and `*.db`.
+3. **Safe Rendering**: All AI outputs render as plain React text nodes, preventing XSS injection.
+4. **SQL Injection Mitigation**: All database operations use SQLAlchemy ORM parameterization.
+5. **CORS Hardening**: Explicit origin whitelisting (`http://localhost:5173`).
+
+---
+
+# Phase 14 — Deployment Preparation
+
+## Production Configuration
+* Created `Procfile` for ASGI hosting: `web: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8000}`.
+* Supported `VITE_API_URL` environment variable in `frontend/src/services/api.js` for standalone cloud hosting (e.g., Vercel / Netlify frontend pointing to Render / Railway backend).
+* **Database Note**: For free-tier cloud platforms with ephemeral disks, `DATABASE_URL` in `backend/.env` can be pointed directly to a managed PostgreSQL database (e.g. Neon) without changing any application code due to SQLAlchemy abstraction.
+
+---
+
+## Complete Request Flows
+
+### 1. Create Lead Flow
+```
+User Submits Form (React)
+  ──▶ POST /api/leads
+  ──▶ Pydantic Validation (LeadCreate)
+  ──▶ Priority Scoring Service (calculate_lead_priority)
+  ──▶ Gemini AI Analysis (analyze_lead_with_ai)
+  ──▶ SQLAlchemy ORM -> SQLite INSERT (db.commit())
+  ──▶ LeadResponse returned -> Dashboard updates
+```
+
+### 2. Lead Chat Flow
+```
+Salesperson sends question ("What should I emphasize?")
+  ──▶ POST /api/leads/{id}/chat
+  ──▶ Fetch Lead from SQLite
+  ──▶ Construct grounded prompt (Lead facts + AI objections)
+  ──▶ Gemini Client (generate_content)
+  ──▶ Sales guidance response returned -> UI renders bubble
+```
+
+### 3. Follow-Up Generation Flow
+```
+Salesperson selects Channel (WhatsApp) & Tone (Urgent)
+  ──▶ POST /api/leads/{id}/follow-up
+  ──▶ Fetch Lead from SQLite
+  ──▶ Gemini formats message tailored to channel constraints
+  ──▶ Formatted text returned -> 1-click Copy button
+```
+
+---
+
+## Database Schema (`leads` table)
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | Integer | Primary Key, Auto-increment | Unique identifier |
+| `name` | String(120) | Not Null | Customer's full name |
+| `location` | String(120) | Not Null | Target city or locality |
+| `property_requirement` | String(255) | Not Null | e.g. 2 BHK near Whitefield |
+| `budget` | String(100) | Not Null | e.g. ₹85L – ₹95L |
+| `buying_timeline` | String(100) | Not Null | e.g. Within 1 month |
+| `customer_message` | Text | Not Null | Inbound inquiry message |
+| `priority` | String(20) | Not Null, Default 'WARM' | `HOT`, `WARM`, or `COLD` |
+| `priority_reason` | Text | Nullable | Human-readable scoring explanation |
+| `ai_analysis` | JSON | Nullable | Stored 6-part AI analysis object |
+| `last_contacted_at` | DateTime | Nullable | Timestamp of last sales contact |
+| `next_follow_up_at` | DateTime | Nullable | Timestamp of next scheduled follow-up |
+| `created_at` | DateTime | Not Null, UTC | Record creation timestamp |
+| `updated_at` | DateTime | Not Null, UTC | Last modification timestamp |
+
+---
+
+## 8. UI Enhancements & Smart Features (B2B Sales Optimization)
+
+To transform Masal AI from a simple CRUD tool into an indispensable daily driver for real estate salespeople, two critical workflow enhancements were integrated:
+
+### 8.1 Compact Pipeline Summary Strip
+* **The Problem**: Bulky stat cards dominated the top 40% of the viewport, pushing actionable leads below the fold.
+* **The Solution**: A compact horizontal pill strip (`All Leads` · `Hot Leads` · `Warm Leads` · `Cold Leads`) with real-time counters and 1-click active state filtering. Provides high scannability and minimal vertical footprint.
+
+### 8.2 AI Priority Queue ("Leads That Need Your Attention Next")
+* **Purpose**: Rather than forcing a salesperson to analyze dozens of cards, the AI Priority Queue dynamically surfaces the **top 3 most actionable leads**.
+* **Sorting Heuristic**:
+  1. **Scheduled Follow-ups**: Leads with upcoming or due `next_follow_up_at` dates are surfaced first.
+  2. **Priority Tier**: `HOT` leads rank above `WARM`, which rank above `COLD`.
+  3. **Timeline Urgency**: Inquiries with `"Immediate"` or `"1 month"` buying horizons rank above exploratory inquiries.
+* **Design**: Features an AI-accented banner, 1-line tactical next step, and 1-click buttons to `Open` lead details or jump straight into `Follow-up` generation.
+
+### 8.3 Lightweight Follow-up Scheduling & Contact Tracking
+* **The Problem**: Sales reps frequently lose track of when they last spoke to a buyer or forget to set next touchpoints.
+* **The Solution**:
+  * Added `last_contacted_at` and `next_follow_up_at` datetime tracking.
+  * **Safe Schema Migration**: Implemented `ensure_db_schema()` using `PRAGMA table_info(leads)` to safely execute `ALTER TABLE ADD COLUMN` on pre-existing SQLite databases without dropping tables or requiring Alembic.
+  * **Quick Scheduling Modal**: Presets for *"Today 5:00 PM"*, *"Tomorrow 11:00 AM"*, *"In 2 Days"*, or custom datetime picker.
+  * **1-Click Contact Logging**: Reps click *"Mark Contacted"* to instantly record today's touchpoint.
+  * **Visual Badges**: Scheduled dates appear directly on the lead cards and within the AI Priority Queue.
+
+---
+
+## 9. 3-Minute Technical Demo Flow
+
+1. **Dashboard & AI Priority Queue (0:00 - 0:45)**:
+   * Point out the **Compact Pipeline Strip** (`6 Total` · `2 Hot` · `2 Warm` · `2 Cold`).
+   * Highlight the **AI Priority Queue** surfacing the top 3 actionable leads with their immediate next steps.
+   * Demonstrate fast filtering by clicking the "Hot" pill or typing a locality like "Whitefield".
+2. **Lead Intake & Instant Prioritization (0:45 - 1:30)**:
+   * Click "Add Lead", input a customer with a 2-month timeline and ₹1.5 Cr budget in Whitefield.
+   * Save lead: Demonstrate deterministic rule-based priority evaluation (`WARM`) and instant Gemini intelligence extraction.
+   * Open Lead Details: Walk through the 6-part analysis grid (Intent, Requirements, Objections, Next Action, Suggested Response).
+3. **Smart Follow-up Scheduling (1:30 - 2:00)**:
+   * In Lead Details, click "Schedule Follow-up" and select *"Tomorrow 11:00 AM"*.
+   * Click "Mark Contacted" to record today's touchpoint.
+   * Return to Dashboard: Show how the scheduled reminder badge appears directly on the lead card and moves it into the AI Priority Queue!
+4. **Conversational Co-Pilot & Follow-Up Studio (2:00 - 3:00)**:
+   * Click "Chat" from the lead card: Ask *"What should I emphasize on the call?"* and demonstrate grounded reasoning.
+   * Click "Follow-up": Switch between **WhatsApp (Friendly)** and **Email (Assertive)**, showing prompt-engineered tone adaptation.
+   * Click "Copy Text" to demonstrate 1-click clipboard copying.
+
+---
+
+## 10. Smart Follow-up Queue (Required Own Feature) & LeadFlow UI Redesign
+
+### 10.1 The Smart Follow-up Queue
+Real estate transactions are lost when salespeople fail to follow up at the agreed time or lose track of customer touchpoints. The **Smart Follow-up Queue** solves this by transforming passive lead records into an active, actionable queue.
+
+* **Core Purpose**: Answers the single question a salesperson asks at 9:00 AM: *"Who do I need to contact next, when, and via what channel?"*
+* **How It Uses `last_contacted_at` & `next_follow_up_at`**:
+  * Calculates time-deltas against current system time to derive three dynamic status tiers:
+    1. **OVERDUE** (subtle red): Scheduled follow-up timestamp is in the past.
+    2. **TODAY** (subtle amber): Due within today's calendar window (e.g., `Today 2 PM`, `Today 4 PM`).
+    3. **TOMORROW** (subtle blue/slate): Scheduled for the next business day.
+* **Mark Follow-up Done Workflow**:
+  * Clicking `[Done]` immediately records a new touchpoint by setting `last_contacted_at = UTC NOW` via `PUT /api/leads/{id}/schedule`.
+  * The lead dynamically clears from the urgent queue and moves to the updated status without page reloads.
+  * Salespeople can open the lead card or click `[Open]` to schedule the subsequent touchpoint.
+
+### 10.2 Minimal-Text Design & High-Scannability Architecture
+* **Strict 7-Point Lead Card Hierarchy**:
+  1. Customer Name (`Rahul Sharma`) & Priority Badge (`HOT`)
+  2. Location & Budget (`Bengaluru · ₹85L–₹95L`)
+  3. Property Requirement (`2 BHK · Whitefield`)
+  4. Short AI Summary (8–12 words generated via `getShortSummary()`, no scoring explanations)
+  5. Next Action (2–4 words: `Next: Call within 2h`)
+  6. Three Compact Actions: `[Open]` `[Chat]` `[Follow-up]`
+* **Zero Visual Clutter**:
+  * Replaced bulky AI priority containers and purple gradients with a clean `#F5F7FB` background, white cards, subtle `#E2E8F0` borders, and `#2563EB` primary accents.
+  * Pipeline overview converted from large cards into a single compact horizontal toolbar: `ALL 5  HOT 3  WARM 2  COLD 0`.
+  * Leads section header simplified to `LEADS · 5 leads` with a compact `Search leads...` input.
+
+---
+
+## 11. LeadFlow Final UI/UX Architecture & Product Design
+
+### 11.1 Design Philosophy: Black + Warm Light Cream + Muted Gray
+Rather than an academic AI project or a blue/purple landing page, LeadFlow is engineered to feel like a high-end, calm, distraction-free B2B productivity tool.
+* **Background**: Warm light cream (`#F7F3EA`) reduces eye fatigue during extended sales sessions.
+* **Surfaces**: Crisp warm off-white (`#FFFDF8`) with razor-thin borders (`#E5E0D6`) and subtle micro-shadows (`0 1px 3px rgba(0,0,0,0.03)`).
+* **Primary Contrast**: Solid dark black (`#111111`) for primary actions and page headers, providing immediate visual anchoring.
+* **Restrained Status Badges**: Muted, desaturated badge backgrounds (`HOT`: `#FCE8E8` / `#A94442`, `WARM`: `#FEF3DC` / `#A66A16`, `COLD`: `#ECE8E1` / `#6B6B65`) that guide priority attention without rainbow clutter.
+
+---
+
+### 11.2 Core Information Architecture & Components
+
+#### 1. Global Shell & Header
+* **Branding**: `LeadFlow` (22px bold) with subtitle `AI-powered real estate sales copilot` (12px secondary).
+* **Action Area**: High-contrast black button `+ Add Lead` directly accessible on the main dashboard; transforms to `← Back to Leads` inside sub-views.
+* **Contained Width**: Centered layout constrained to a maximum of 1240px to eliminate wide-screen scanning fatigue.
+
+#### 2. Pipeline Summary (Interactive Filter Stat Cards)
+* **Four Compact Cards**: `TOTAL (5)` · `HOT (3)` · `WARM (2)` · `COLD (0)`.
+* **Dual Purpose**: Serves as both an instantaneous at-a-glance health check of the pipeline and an interactive one-click filter. Active filters are highlighted with a 1px solid black border.
+
+#### 3. Follow-up Reminders (Required Own Feature)
+* **The Salesperson's Daily Starting Point**: Answers the core operational question: *"Who do I contact next? How? When?"*
+* **Dynamic Time Tiers**: Evaluates stored `next_follow_up_at` against current time:
+  * **OVERDUE**: Missed schedule (soft red alert).
+  * **TODAY**: Scheduled for today with exact time (e.g. `Today 2:00 PM`).
+  * **TOMORROW**: Due on the next calendar day.
+* **One-Click Actionability**:
+  * `[Open]`: Navigates immediately to the lead's intelligence dossier.
+  * `[✓] (Done)`: Immediately records `last_contacted_at` as the current timestamp and removes the completed lead from the urgent attention queue.
+* **Why This Feature Drives Sales Performance**: Real-estate deals are won or lost on response latency. Inbound buyers typically inquire with 3–5 competing developers. Sales reps who call back within hours or adhere to agreed callback appointments close up to 70% more site visits.
+
+#### 4. Leads Section & Search Toolbar
+* **Clear Header**: `LEADS` with an intuitive search input (`Search leads...`) and priority filter pills (`All`, `Hot`, `Warm`, `Cold`).
+* **Instant Client Filtering**: Searches across names, localities, budget bands, and customer messages with zero network roundtrips.
+
+#### 5. Concise Lead Cards (Strict 7-Item Hierarchy)
+* Eliminates cognitive overload by banning long paragraphs, score formulas, or raw quotes from card faces:
+  1. **Customer Name** & subtle **Priority Badge** (`Rahul Sharma` · `HOT`)
+  2. **Location · Budget** (`Bengaluru · ₹85L–₹95L`)
+  3. **Property Requirement** (`2 BHK · Whitefield`)
+  4. **AI Summary**: 1–2 concise lines (max 12–15 words derived via `getShortLeadSummary(lead)`, e.g., *"Ready to buy soon; wants verified options."*)
+  5. **Next Action**: 2–4 punchy words (`Call within 2h`)
+  6. **Direct Quick Actions**: `[View]` `[Chat]` `[Follow-up]`
+
+#### 6. Structured Lead Details (Two-Column Desktop Dossier)
+Replaces the chaotic vertical wall of text with an organized, two-column executive dossier:
+* **Top Navigation & Actions**:
+  * `← Back to Leads`
+  * Prominent Lead Name + Priority Badge + Locality/Budget subline
+  * Action controls: `[Re-analyze]` (secondary), `[AI Chat]` (secondary), `[Generate Follow-up]` (primary black button), and subtle trash icon for deletion.
+* **Left Column (AI Intelligence & Strategy)**:
+  1. `AI SUMMARY`: High-visibility executive card (1–2 concise sentences).
+  2. `CUSTOMER INTENT`: Crisp statement of buying motivation.
+  3. `KEY REQUIREMENTS`: Clean bullet points (`• 2 BHK`, `• Whitefield`, etc.).
+  4. `CONCERNS`: Specific buyer objections requiring objection handling.
+  5. `NEXT ACTION`: Recommended tactical next step.
+  6. `SUGGESTED RESPONSE`: AI-drafted first message with 1-click clipboard copy.
+* **Right Column (Lead Info & Action Tracking)**:
+  1. `LEAD INFO`: Key-value pairs for Location, Budget, Property, Timeline, and Date Added.
+  2. `FOLLOW-UP`: Current schedule, last contacted timestamp, and quick buttons `[Mark Contacted]` and `[Schedule]` (preset modal: Today 5 PM, Tomorrow 11 AM, In 2 Days, Custom).
+  3. `CUSTOMER MESSAGE`: Original inbound inquiry isolated in a subtle quote block.
+
+#### 7. AI Sales Copilot (`LeadChat`)
+* Redesigned in the Black + Cream aesthetic.
+* Quick coaching prompt pills: *"What should I say?"*, *"Make it assertive"*, *"Summarize"*, *"Handle objection"*.
+* Fully grounded in the lead's stored requirements and objections, preventing generic advice.
+
+#### 8. Follow-up Generator (`FollowUpGenerator`)
+* Multi-channel selector: WhatsApp, Email, Call Script.
+* Strategic tone selector: Professional, Friendly, Assertive, Urgent.
+* Formats ready-to-dispatch messages with 1-click copy.
+
+#### 9. Responsive Layout Behavior
+* **Desktop (>=1024px)**: 3-column leads grid; 2-column Lead Details (60/40 split).
+* **Tablet (768px–1023px)**: 2-column leads grid; stacked Lead Details.
+* **Mobile (<768px)**: 1-column layout throughout, horizontal scroll on prompt pills, full-width touch targets.
+
+---
+
+## Technical Interview Preparation (Q&A)
+
+### React & Frontend
+**Q: Why use `useMemo` for search and filtering instead of storing `filteredLeads` in state?**
+> *"Storing derived data in separate state causes synchronization bugs. With `useMemo`, `filteredLeads` is calculated purely as a function of `leads`, `searchQuery`, and `priorityFilter`, recalculating only when those dependencies change."*
+
+**Q: How does the API adapter pattern in `frontend/src/services/api.js` help maintainability?**
+> *"Components should not know HTTP details like status codes, JSON serialization, or endpoint paths. The API service encapsulates network calls and normalizes backend snake_case into predictable properties, decoupling UI components from backend schema changes."*
+
+### FastAPI & Python
+**Q: Why is FastAPI better suited for this AI application than Flask?**
+> *"FastAPI has native async support for non-blocking I/O during external LLM API calls, integrates Pydantic for automated request/response validation, and generates interactive OpenAPI Swagger docs out of the box."*
+
+**Q: How does the `get_db` generator function manage database connections safely?**
+> *"It uses Python's `yield` pattern within a FastAPI dependency. When a request starts, a session is created and yielded. Once the response completes, the `finally` block executes `db.close()`, guaranteeing no database connection leaks."*
+
+### AI & Gemini Integration
+**Q: Why use structured JSON output (`response_schema`) rather than prompt instructions alone?**
+> *"Prompt instructions alone can drift or return conversational markdown preambles like 'Here is your JSON:'. Setting `response_schema=AIAnalysisSchema` forces the model's decoding logits to conform to the Pydantic schema, guaranteeing valid JSON every time."*
+
+**Q: Why must the Gemini API key remain strictly server-side?**
+> *"Frontend code is delivered to and executed in the client browser. Any user can inspect network traffic or client source code to extract the API key, leading to quota theft and financial liability."*
+
+### Priority & System Design
+**Q: Why choose deterministic rule-based priority scoring over an LLM opinion?**
+> *"LLM prompts can produce non-deterministic scores and hallucinated reasoning. A transparent rule-based model using weighted signals (timeline, budget clarity, intent) is explainable, auditable by salespeople, repeatable, and requires zero API cost."*
